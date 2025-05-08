@@ -6,7 +6,7 @@ export class LoggedUserDto {
     description: 'JWT access token for authentication',
     example: 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9...',
   })
-  accessToken: string;
+  token: string;
 
   @ApiProperty({
     description: 'Token type',

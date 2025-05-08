@@ -1,8 +1,11 @@
 import { Injectable, Logger, ConflictException, NotFoundException, InternalServerErrorException } from '@nestjs/common';
 import { UpdateUserDto } from './dto/update-user.dto';
 import { InjectRepository } from '@nestjs/typeorm';
-import { Repository, QueryFailedError, EntityNotFoundError, EntityManager } from 'typeorm';
+import { Repository, QueryFailedError, EntityNotFoundError, EntityManager, In } from 'typeorm';
 import { User } from './entities/user.entity';
+import { CreateUserDto } from './dto/create-user.dto';
+import { Role } from '../roles/entities/role.entity';
+import * as bcrypt from 'bcrypt';
 
 export enum UserErrorCode {
   USER_NOT_FOUND = 'USER_NOT_FOUND',
@@ -28,18 +31,63 @@ export class UsersService {
   constructor(
     @InjectRepository(User)
     private userRepository: Repository<User>,
+    @InjectRepository(Role)
+    private roleRepository: Repository<Role>,
   ) {}
 
-  async createUser(userData: Partial<User>, manager?: EntityManager): Promise<User> {
+  async createUser(createUserDto: CreateUserDto, manager?: EntityManager): Promise<User> {
+    const queryRunner = manager ? null : this.userRepository.manager.connection.createQueryRunner();
+    const entityManager = manager || queryRunner?.manager;
+
     try {
-      const user = this.userRepository.create(userData);
-  
-      if (manager) {
-        return manager.save(user);
+      if (queryRunner) {
+        await queryRunner.connect();
+        await queryRunner.startTransaction();
       }
-      return this.userRepository.save(user);
+
+      // Check if user with email already exists
+      const existingUser = await this.findByEmail(createUserDto.email, entityManager);
+      if (existingUser) {
+        throw new ConflictException('Email already exists');
+      }
+
+      // Hash password
+      const hashedPassword = await bcrypt.hash(createUserDto.password, 10);
+
+      // Create user
+      const user =  this.userRepository.create({
+        username: createUserDto.username,
+        email: createUserDto.email,
+        password: hashedPassword,
+        verificationToken:createUserDto.verificationToken
+      });
+user.verificationToken=createUserDto.verificationToken
+      // Assign roles if provided
+      if (createUserDto.roleIds && createUserDto.roleIds.length > 0) {
+        const roles = await this.roleRepository.findBy({id:In(createUserDto.roleIds)});
+        if (roles.length !== createUserDto.roleIds.length) {
+          throw new NotFoundException('One or more roles not found');
+        }
+        user.roles = roles;
+      }
+
+      // Save user
+      const savedUser = await entityManager.save(user);
+
+      if (queryRunner) {
+        await queryRunner.commitTransaction();
+      }
+
+      return savedUser;
     } catch (error) {
+      if (queryRunner) {
+        await queryRunner.rollbackTransaction();
+      }
       this.handleDatabaseError(error, 'Error creating user');
+    } finally {
+      if (queryRunner) {
+        await queryRunner.release();
+      }
     }
   }
 

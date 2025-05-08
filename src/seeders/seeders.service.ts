@@ -105,7 +105,8 @@ export class SeedersService {
           password: hashedPassword,
           isActive: true,
           emailVerified: true,
-          roles: [adminRole],
+          roleIds: [adminRole.id],
+          verificationToken:""
         },
         queryRunner.manager
       );
@@ -210,19 +211,25 @@ export class SeedersService {
           username: 'testuser1',
           email: 'user1@example.com',
           password: 'Test@123',
-          roles: [userRole],
+          roleIds: [userRole.id],
+          isActive: true,
+          emailVerified: true,
         },
         {
           username: 'testuser2',
           email: 'user2@example.com',
           password: 'Test@123',
-          roles: [userRole],
+          roleIds: [userRole.id],
+          isActive: true,
+          emailVerified: true,
         },
         {
           username: 'moderator',
           email: 'moderator@example.com',
           password: 'Mod@123',
-          roles: [moderatorRole],
+          roleIds: [moderatorRole.id],
+          isActive: true,
+          emailVerified: true,
         },
       ];
 
@@ -237,8 +244,7 @@ export class SeedersService {
             {
               ...userData,
               password: hashedPassword,
-              isActive: true,
-              emailVerified: true,
+              verificationToken:""
             },
             queryRunner.manager
           );

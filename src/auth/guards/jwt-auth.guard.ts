@@ -1,69 +1,70 @@
-import { Injectable, ExecutionContext, UnauthorizedException } from '@nestjs/common';
+import { Injectable, ExecutionContext, UnauthorizedException, SetMetadata } from '@nestjs/common';
 import { AuthGuard } from '@nestjs/passport';
-import * as jwt from 'jsonwebtoken'; // Import jsonwebtoken library
 import { Request } from 'express';
 import { Logger } from '@nestjs/common';
+import { UsersService } from '../../users/users.service';
+import { Observable } from 'rxjs';
+import { User } from '../../users/entities/user.entity';
+import { Reflector } from '@nestjs/core';
+
+export const IS_PUBLIC_KEY = 'isPublic';
+export const Public = () => SetMetadata(IS_PUBLIC_KEY, true);
 
 @Injectable()
 export class JwtAuthGuard extends AuthGuard('jwt') {
   private readonly logger = new Logger(JwtAuthGuard.name);
 
-  canActivate(context: ExecutionContext) {
+  constructor(
+    private usersService: UsersService,
+    private reflector: Reflector,
+  ) {
+    super();
+  }
+
+  canActivate(context: ExecutionContext): boolean | Promise<boolean> | Observable<boolean> {
+    // Check if the route is marked as public
+    const isPublic = this.reflector.getAllAndOverride<boolean>(IS_PUBLIC_KEY, [
+      context.getHandler(),
+      context.getClass(),
+    ]);
+
+    if (isPublic) {
+      return true;
+    }
+
     const request = context.switchToHttp().getRequest<Request>();
     
     this.logger.log(`Authentication check for: ${request.method} ${request.url}`);
 
-    let token: string;
-
-    // Check if token is provided in the Authorization header
+    // Get token from Authorization header
     const authHeader = request.headers.authorization;
-    if (authHeader && authHeader.startsWith('Bearer ')) {
-      token = authHeader.split(' ')[1];
-      this.logger.log('Token found in Authorization header');
-    } 
-    // Check if token is provided in query parameters (for SSE endpoints)
-    else if (request.query.token) {
-      token = request.query.token as string;
-      this.logger.log('Token found in query parameter');
+    if (!authHeader || !authHeader.startsWith('Bearer ')) {
+      this.logger.warn('No Bearer token found in Authorization header');
+      throw new UnauthorizedException('No token provided');
     }
 
-    if (!token) {
-      this.logger.warn('No token found in request');
-      throw new UnauthorizedException('Authorization token is missing or invalid.');
-    }
+    const token = authHeader.split(' ')[1];
 
-    try {
-      // Decode JWT token
-      const decodedUser = jwt.verify(token, process.env.JWT_SECRET) as any;
-      
-      // Attach user data to the request object
-      request.user = decodedUser;
-      
-      // Skip passport processing for SSE requests with token in query parameter
-      if (request.query.token) {
-        // For SSE requests with query token, return true to bypass passport
-        return true;
-      }
-      
-      // For regular requests, use passport
-      return super.canActivate(context);
-    } catch (error) {
-      this.logger.error(`JWT validation failed: ${error.message}`);
-      throw new UnauthorizedException('Unauthorized: Token is invalid or expired.');
-    }
+    // For regular requests, use passport
+    return super.canActivate(context);
   }
 
-  handleRequest(err: any, user: any, info: any, context: ExecutionContext) {
-    // For SSE endpoints with token in query, we already validated the token
-    const request = context.switchToHttp().getRequest();
-    if (request.query.token && request.user) {
-      return request.user;
-    }
-    
+  handleRequest<TUser = any>(err: any, user: any, info: any, context: ExecutionContext): TUser {
     if (err || !user) {
-      throw new UnauthorizedException('Unauthorized: Token is invalid or expired.');
+      this.logger.error(`Authentication failed: ${err?.message || 'No user found'}`);
+      throw new UnauthorizedException('Invalid token or token expired');
     }
 
-    return user;
+    // The user object from JwtStrategy already contains the necessary data
+    // No need to load it again since we're using eager loading in the User entity
+    if (!user.isActive) {
+      throw new UnauthorizedException('User account is inactive');
+    }
+
+    // Attach the user data to the request
+    const request = context.switchToHttp().getRequest();
+    request.user = user;
+
+    return user as TUser;
   }
 }

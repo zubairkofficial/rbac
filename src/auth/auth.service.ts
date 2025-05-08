@@ -21,7 +21,7 @@ export class AuthService {
     private emailService: EmailService,
   ) {}
 
-  async signUp(input: SignupDto): Promise<{ accessToken: string; user: User; verificationSent: boolean }> {
+  async signUp(input: SignupDto): Promise<{ token: string; user: User; verificationSent: boolean }> {
     const queryRunner = this.dataSource.createQueryRunner();
     await queryRunner.connect();
     await queryRunner.startTransaction();
@@ -39,14 +39,14 @@ export class AuthService {
         ...input, 
         password: hashedPassword,
         emailVerified: false,
-        verificationToken: this.generateVerificationToken()
+        verificationToken:  this.generateVerificationToken()
       };
 
       // Create user within transaction
       const newUser = await this.usersService.createUser(userInput, queryRunner.manager);
       
       // Generate token
-      const accessToken = this.jwtService.sign({
+      const token = this.jwtService.sign({
         sub: newUser.id,
         email: newUser.email,
         username: newUser.username,
@@ -56,7 +56,7 @@ export class AuthService {
       const verificationSent = await this.sendVerificationEmail(newUser);
 
       await queryRunner.commitTransaction();
-      return { accessToken, user: newUser, verificationSent };
+      return { token, user: newUser, verificationSent };
     } catch (error) {
       await queryRunner.rollbackTransaction();
       this.handleAuthError(error, 'Failed to sign up user');
@@ -65,7 +65,7 @@ export class AuthService {
     }
   }
 
-  async signIn(credentials: { email: string; password: string }): Promise<{ accessToken: string; user: Partial<User> }> {
+  async signIn(credentials: { email: string; password: string }): Promise<{ token: string; user: Partial<User> }> {
     const queryRunner = this.dataSource.createQueryRunner();
     
     try {
@@ -76,13 +76,15 @@ export class AuthService {
         throw new UnauthorizedException('Invalid credentials');
       }
       
-      const accessToken = this.jwtService.sign({
+      const token = this.jwtService.sign({
         sub: user.id,
         email: user.email,
         username: user.username,
+        roles:user.roles[0].name,
+        isActive:user.isActive
       });
       
-      return { accessToken, user };
+      return { token, user };
     } catch (error) {
       this.handleAuthError(error, 'Failed to sign in user');
     } finally {
@@ -113,7 +115,8 @@ export class AuthService {
   }
 
   private generateVerificationToken(): string {
-    return randomBytes(32).toString('hex');
+    const randomToken= randomBytes(32).toString('hex');
+    return randomToken
   }
 
   private async sendVerificationEmail(user: User): Promise<boolean> {

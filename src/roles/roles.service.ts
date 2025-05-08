@@ -5,6 +5,7 @@ import { Role } from './entities/role.entity';
 import { CreateRoleDto } from './dto/create-role.dto';
 import { UpdateRoleDto } from './dto/update-role.dto';
 import { PermissionsService } from '../permissions/permissions.service';
+import { UpdateRolePermissionDto } from './dto/update-role-permission.dto';
 
 @Injectable()
 export class RolesService {
@@ -174,6 +175,45 @@ export class RolesService {
       await this.roleRepository.remove(role);
     } catch (error) {
       this.logger.error(`Failed to remove role: ${error.message}`, error.stack);
+      throw error;
+    }
+  }
+
+  async updateRolePermission(updateRolePermissionDto: UpdateRolePermissionDto): Promise<Role> {
+    try {
+      const { id: permissionId, roleId, isActive } = updateRolePermissionDto;
+
+      // Find the role
+      const role = await this.findOne(roleId);
+      
+      // Find the permission
+      const permission = await this.permissionsService.findOne(permissionId);
+
+      if (isActive) {
+        // Add permission if it doesn't exist
+        if (!role.permissions.some(p => p.id === permissionId)) {
+          role.permissions = [...role.permissions, permission];
+        }
+      } else {
+        // Remove permission if it exists
+        role.permissions = role.permissions.filter(p => p.id !== permissionId);
+      }
+
+      // Save the role which will handle the role_permissions table updates
+      const updatedRole = await this.roleRepository.save(role);
+
+      // If isActive is false, explicitly remove from role_permissions table
+      if (!isActive) {
+        await this.roleRepository
+          .createQueryBuilder()
+          .relation(Role, "permissions")
+          .of(role)
+          .remove(permission);
+      }
+
+      return updatedRole;
+    } catch (error) {
+      this.logger.error(`Failed to update role permission: ${error.message}`, error.stack);
       throw error;
     }
   }

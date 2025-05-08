@@ -5,7 +5,7 @@ export class AccessTokenDto {
     description: 'JWT access token',
     example: 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9...',
   })
-  accessToken: string;
+  token: string;
 
   @ApiProperty({
     description: 'Token expiration time in seconds',

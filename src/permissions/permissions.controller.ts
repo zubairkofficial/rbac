@@ -15,7 +15,8 @@ import {
   import { PermissionsService } from './permissions.service';
   import { CreatePermissionDto } from './dto/create-permission.dto';
   import { UpdatePermissionDto } from './dto/update-permission.dto';
-  import { Permission } from './entities/permission.entity';
+  import { Permission, PermissionAction } from './entities/permission.entity';
+import { RequirePermissions } from 'src/common/decorators/permissions.decorator';
   
   @ApiTags('permissions')
   @ApiBearerAuth()
@@ -25,6 +26,7 @@ import {
     constructor(private readonly permissionsService: PermissionsService) {}
   
     @Post()
+    @RequirePermissions({ resource: 'permissions', action: PermissionAction.CREATE })
     @ApiOperation({ summary: 'Create a new permission' })
     @ApiResponse({ status: 201, description: 'Permission created successfully', type: Permission })
     @ApiResponse({ status: 400, description: 'Bad request' })
@@ -34,6 +36,7 @@ import {
     }
   
     @Get()
+    @RequirePermissions({ resource: 'permissions', action: PermissionAction.READ })
     @ApiOperation({ summary: 'Get all permissions' })
     @ApiResponse({ status: 200, description: 'List of permissions', type: [Permission] })
     findAll(
@@ -44,6 +47,7 @@ import {
     }
   
     @Get(':id')
+    @RequirePermissions({ resource: 'permissions', action: PermissionAction.READ })
     @ApiOperation({ summary: 'Get a permission by ID' })
     @ApiResponse({ status: 200, description: 'Permission found', type: Permission })
     @ApiResponse({ status: 404, description: 'Permission not found' })
@@ -52,6 +56,7 @@ import {
     }
   
     @Patch(':id')
+    @RequirePermissions({ resource: 'permissions', action: PermissionAction.UPDATE })
     @ApiOperation({ summary: 'Update a permission' })
     @ApiResponse({ status: 200, description: 'Permission updated successfully', type: Permission })
     @ApiResponse({ status: 404, description: 'Permission not found' })
@@ -64,6 +69,7 @@ import {
     }
   
     @Delete(':id')
+    @RequirePermissions({ resource: 'permissions', action: PermissionAction.DELETE })
     @ApiOperation({ summary: 'Delete a permission' })
     @ApiResponse({ status: 200, description: 'Permission deleted successfully' })
     @ApiResponse({ status: 404, description: 'Permission not found' })

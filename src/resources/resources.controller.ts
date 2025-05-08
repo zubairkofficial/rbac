@@ -5,6 +5,8 @@ import { ResourcesService } from './resources.service';
 import { CreateResourceDto } from './dto/create-resource.dto';
 import { UpdateResourceDto } from './dto/update-resource.dto';
 import { Resource } from './entities/resource.entity';
+import { PermissionAction } from '../permissions/entities/permission.entity';
+import { RequirePermissions } from 'src/common/decorators/permissions.decorator';
 
 @ApiTags('resources')
 @ApiBearerAuth()
@@ -14,6 +16,7 @@ export class ResourcesController {
   constructor(private readonly resourcesService: ResourcesService) {}
 
   @Post()
+  @RequirePermissions({ resource: 'resources', action: PermissionAction.CREATE })
   @ApiOperation({ summary: 'Create a new resource' })
   @ApiResponse({ status: 201, description: 'Resource created successfully', type: Resource })
   @ApiResponse({ status: 400, description: 'Bad request' })
@@ -23,6 +26,7 @@ export class ResourcesController {
   }
 
   @Get()
+  @RequirePermissions({ resource: 'resources', action: PermissionAction.READ })
   @ApiOperation({ summary: 'Get all resources' })
   @ApiResponse({ status: 200, description: 'List of resources', type: [Resource] })
   findAll(@Query('isActive') isActive?: boolean): Promise<Resource[]> {
@@ -30,6 +34,7 @@ export class ResourcesController {
   }
 
   @Get(':id')
+  @RequirePermissions({ resource: 'resources', action: PermissionAction.READ })
   @ApiOperation({ summary: 'Get a resource by ID' })
   @ApiResponse({ status: 200, description: 'Resource found', type: Resource })
   @ApiResponse({ status: 404, description: 'Resource not found' })
@@ -38,6 +43,7 @@ export class ResourcesController {
   }
 
   @Patch(':id')
+  @RequirePermissions({ resource: 'resources', action: PermissionAction.UPDATE })
   @ApiOperation({ summary: 'Update a resource' })
   @ApiResponse({ status: 200, description: 'Resource updated successfully', type: Resource })
   @ApiResponse({ status: 404, description: 'Resource not found' })
@@ -47,6 +53,7 @@ export class ResourcesController {
   }
 
   @Delete(':id')
+  @RequirePermissions({ resource: 'resources', action: PermissionAction.DELETE })
   @ApiOperation({ summary: 'Delete a resource' })
   @ApiResponse({ status: 200, description: 'Resource deleted successfully' })
   @ApiResponse({ status: 404, description: 'Resource not found' })

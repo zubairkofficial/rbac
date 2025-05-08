@@ -8,6 +8,11 @@ import { ResourcesModule } from './resources/resources.module';
 import { PermissionsModule } from './permissions/permissions.module';
 import { EmailModule } from './email/email.module';
 import { SeedersModule } from './seeders/seeders.module';
+import { PermissionGuard } from './common/guards/permission.guard';
+import { JwtAuthGuard } from './auth/guards/jwt-auth.guard';
+import { APP_GUARD } from '@nestjs/core';
+import { AppController } from './app.controller';
+import { AppService } from './app.service';
 
 @Module({
   imports: [
@@ -35,6 +40,18 @@ import { SeedersModule } from './seeders/seeders.module';
     AuthModule,
     EmailModule,
     SeedersModule,
+  ],
+  controllers: [AppController],
+  providers: [
+    AppService,
+    {
+      provide: APP_GUARD,
+      useClass: JwtAuthGuard,
+    },
+    {
+      provide: APP_GUARD,
+      useClass: PermissionGuard,
+    },
   ],
 })
 export class AppModule {}

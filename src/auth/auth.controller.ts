@@ -8,14 +8,17 @@ import {
   Query,
   BadRequestException,
   Redirect,
+  HttpCode,
 } from '@nestjs/common';
 import { AuthService } from './auth.service';
 import { ApiTags, ApiOperation, ApiResponse } from '@nestjs/swagger';
 import { SignupDto } from './dto/register.dto';
 import { SignInDto } from './dto/login.dto';
+import { Public } from './guards/jwt-auth.guard';
 
 @ApiTags('auth')
 @Controller('auth')
+@Public()
 export class AuthController {
   constructor(private readonly authService: AuthService) {}
 
@@ -71,5 +74,11 @@ export class AuthController {
     } catch (error) {
       throw new HttpException(error.message, HttpStatus.BAD_REQUEST);
     }
+  }
+
+  @Post('login')
+  @HttpCode(HttpStatus.OK)
+  async login(@Body() loginDto: SignInDto) {
+    return this.authService.signIn(loginDto);
   }
 }

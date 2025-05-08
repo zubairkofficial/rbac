@@ -1,0 +1,120 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>OTP Verification</title>
+    <style>
+        /* Reset styles */
+        body, table, td, a {
+            -webkit-text-size-adjust: 100%;
+            -ms-text-size-adjust: 100%;
+        }
+        table, td {
+            mso-table-lspace: 0pt;
+            mso-table-rspace: 0pt;
+        }
+        img {
+            -ms-interpolation-mode: bicubic;
+        }
+        
+        /* Custom styles */
+        :root {
+            --primary-color: #2563eb;
+            --secondary-color: #1e40af;
+            --background-color: #f8fafc;
+            --text-color: #1e293b;
+            --font-family: 'Segoe UI', system-ui, sans-serif;
+        }
+
+        body {
+            margin: 0;
+            padding: 0;
+            background-color: var(--background-color);
+            font-family: var(--font-family);
+        }
+
+        .email-wrapper {
+            max-width: 600px;
+            margin: 0 auto;
+            padding: 2rem;
+        }
+
+        .email-card {
+            background: white;
+            border-radius: 12px;
+            box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+            padding: 2rem;
+        }
+
+        .header {
+            text-align: center;
+            margin-bottom: 1.5rem;
+        }
+
+        .content {
+            margin-bottom: 1.5rem;
+        }
+
+        .otp-code {
+            background: #f1f5f9;
+            padding: 1rem;
+            border-radius: 8px;
+            text-align: center;
+            font-size: 1.5rem;
+            font-weight: bold;
+            color: var(--primary-color);
+            margin: 1.5rem 0;
+        }
+
+        .footer {
+            text-align: center;
+            margin-top: 2rem;
+            padding-top: 2rem;
+            border-top: 1px solid #e2e8f0;
+            font-size: 0.875rem;
+            color: #64748b;
+        }
+
+        .contact-info {
+            margin-top: 1rem;
+        }
+
+        /* Responsive styles */
+        @media (max-width: 640px) {
+            .email-wrapper {
+                padding: 1rem;
+            }
+
+            .email-card {
+                border-radius: 0;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="email-wrapper">
+        <div class="email-card">
+            <div class="header">
+                <h1 style="color: var(--text-color); margin: 0;">Security Verification</h1>
+            </div>
+            <div class="content">
+                <p style="color: #64748b;">Dear {{username}},</p>
+                <p style="color: #64748b;">Your one-time verification code is:</p>
+                <div class="otp-code">{{otp}}</div>
+                <p style="color: #64748b;">This code will expire in {{expiration}}.</p>
+                <p style="color: #64748b;">If you didn't request this code, please ignore this email.</p>
+            </div>
+            <div class="footer">
+                <p>Need help? Contact our support team:</p>
+                <div class="contact-info">
+                    <a href="mailto:{{supportEmail}}" style="color: var(--primary-color); text-decoration: none;">
+                        {{supportEmail}}
+                    </a>
+                </div>
+                <p style="margin-top: 1rem;">© {{currentYear}} {{companyName}}. All rights reserved.</p>
+            </div>
+        </div>
+    </div>
+</body>
+</html>

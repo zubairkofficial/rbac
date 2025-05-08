@@ -8,6 +8,8 @@ import { LocalStrategy } from './strategies/local.strategy';
 import { JwtStrategy } from './strategies/jwt.strategy';
 import { AuthController } from './auth.controller';
 import { EmailService } from 'src/email/email.service';
+import { JwtAuthGuard } from './guards/jwt-auth.guard';
+
 @Module({
     imports: [
       ConfigModule, // ✅ Add this line
@@ -22,8 +24,8 @@ import { EmailService } from 'src/email/email.service';
         }),
       }),
     ],
-    providers: [AuthService, LocalStrategy, JwtStrategy,EmailService],
+    providers: [AuthService, LocalStrategy, JwtStrategy,EmailService, JwtAuthGuard],
     controllers: [AuthController],
-    exports: [AuthService,JwtModule],
+    exports: [AuthService,JwtModule, JwtAuthGuard],
   })
   export class AuthModule {}
